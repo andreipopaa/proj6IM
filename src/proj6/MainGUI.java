@@ -1,10 +1,23 @@
 package proj6;
 
-public class MainGUI extends javax.swing.JDialog {
+import java.net.Socket;
 
+public class MainGUI extends javax.swing.JDialog implements Runnable {
+    private Socket sock;
+    private String frindList[];
     /**
      * Creates new form MainGUI
      */
+    public MainGUI(java.awt.Frame parent, boolean modal, Socket sock, String friends) {
+        super(parent, modal);
+        initComponents();
+        this.sock = sock;
+        
+        
+    }
+    
+    public void updateFriends
+    
     public MainGUI(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
@@ -131,4 +144,9 @@ public class MainGUI extends javax.swing.JDialog {
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea onlineFriendsTxtArea;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void run() {
+        
+    }
 }

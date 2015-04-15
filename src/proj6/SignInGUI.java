@@ -3,7 +3,6 @@ package proj6;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
 import javax.swing.JDialog;
@@ -38,6 +37,7 @@ public class SignInGUI extends javax.swing.JFrame {
         idField = new javax.swing.JTextField();
         signInBtn = new javax.swing.JButton();
         pwdField = new javax.swing.JPasswordField();
+        errorLabel = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -61,19 +61,22 @@ public class SignInGUI extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGap(63, 63, 63)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(20, 20, 20)
                         .addComponent(jLabel1))
-                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                        .addComponent(jLabel2)
-                        .addComponent(jLabel3)
-                        .addComponent(idField)
-                        .addComponent(pwdField, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel2)
+                    .addComponent(jLabel3)
+                    .addComponent(idField)
+                    .addComponent(pwdField, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
                     .addGroup(layout.createSequentialGroup()
                         .addGap(28, 28, 28)
                         .addComponent(signInBtn)))
                 .addContainerGap(64, Short.MAX_VALUE))
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(errorLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -90,7 +93,9 @@ public class SignInGUI extends javax.swing.JFrame {
                 .addComponent(pwdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(signInBtn)
-                .addContainerGap(318, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(errorLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(279, Short.MAX_VALUE))
         );
 
         pack();
@@ -101,6 +106,8 @@ public class SignInGUI extends javax.swing.JFrame {
         String host = "127.0.0.1";
         BufferedReader in = null;
         Socket sock = null;
+        
+        errorLabel.setText("");
         
         try 
         {
@@ -116,12 +123,21 @@ public class SignInGUI extends javax.swing.JFrame {
             System.out.println("Waiting for the server to respond...");
             
             String loginSuccess = in.readLine();
-            if (loginSuccess.equals("true")) {
-                JDialog main = new MainGUI(this, true);
+            System.out.println("Message received from server: " + loginSuccess);
+            if (!loginSuccess.equals("false")) {
+                JDialog main = new MainGUI(this, true, sock, loginSuccess);
                 this.setVisible(false);
                 main.setVisible(true);
+                Thread thrd = new Thread((Runnable) main);
+                thrd.start();
+                
+                try {
+                    thrd.join();                                       
+                }
+                catch (InterruptedException ie) {} 
             } else {
-                System.out.println("Invalid username or password");
+                pwdField.setText("");
+                errorLabel.setText("**Invalid username or password");
             }
             
             sock.close();
@@ -130,10 +146,6 @@ public class SignInGUI extends javax.swing.JFrame {
         {
             System.err.println(ioe);
         }
-        
-//        JDialog main = new MainGUI(this, true);
-//        this.setVisible(false);
-//        main.setVisible(true);
     }//GEN-LAST:event_signInBtnActionPerformed
 
     /**
@@ -173,6 +185,7 @@ public class SignInGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel errorLabel;
     private javax.swing.JTextField idField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

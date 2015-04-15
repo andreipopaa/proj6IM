@@ -5,9 +5,22 @@ import java.io.*;
 import java.util.HashMap;
 
 public class ChatServer 
-{    
+{
+    public static boolean online[];
+    public static final HashMap<String, String> users;
+    static
+    {
+        users = new HashMap<String, String>();
+        users.put("andreipopa", "pwd");
+        users.put("dillonhenschen", "password");
+        users.put("drg", "drg");
+    }
+    
     public static void main(String[] args)
     {
+        int size = users.size();
+        online = new boolean[size];
+        
         try
         {
             ServerSocket sock = new ServerSocket(4220);
