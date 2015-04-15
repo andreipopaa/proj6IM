@@ -1,5 +1,11 @@
 package proj6;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.PrintWriter;
+import java.net.Socket;
 import javax.swing.JDialog;
 
 public class SignInGUI extends javax.swing.JFrame {
@@ -91,9 +97,43 @@ public class SignInGUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void signInBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signInBtnActionPerformed
-        JDialog main = new MainGUI(this, true);
-        this.setVisible(false);
-        main.setVisible(true);
+        int port = 4220;
+        String host = "127.0.0.1";
+        BufferedReader in = null;
+        Socket sock = null;
+        
+        try 
+        {
+            sock = new Socket(host, port);
+            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            PrintWriter pout = new PrintWriter(sock.getOutputStream(), true);
+            
+            String passText = new String(pwdField.getPassword());
+            String message = "login " + idField.getText() + " " + passText;
+            pout.println(message);
+            // feedback messages
+            System.out.println("String sent to the server.");
+            System.out.println("Waiting for the server to respond...");
+            
+            String loginSuccess = in.readLine();
+            if (loginSuccess.equals("true")) {
+                JDialog main = new MainGUI(this, true);
+                this.setVisible(false);
+                main.setVisible(true);
+            } else {
+                System.out.println("Invalid username or password");
+            }
+            
+            sock.close();
+        }
+        catch (IOException ioe)
+        {
+            System.err.println(ioe);
+        }
+        
+//        JDialog main = new MainGUI(this, true);
+//        this.setVisible(false);
+//        main.setVisible(true);
     }//GEN-LAST:event_signInBtnActionPerformed
 
     /**
