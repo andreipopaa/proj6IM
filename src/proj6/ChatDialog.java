@@ -1,7 +1,15 @@
 package proj6;
 
-public class ChatDialog extends javax.swing.JDialog {
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
+public class ChatDialog extends javax.swing.JDialog implements Runnable{
+    private Socket sock;
+    private PrintWriter pout;
+    private BufferedReader in;
     /**
      * Creates new form chatDialog
      */
@@ -9,6 +17,20 @@ public class ChatDialog extends javax.swing.JDialog {
     public ChatDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
+    }
+
+    ChatDialog() throws IOException {
+        initComponents();
+        initSocket();
+    }
+    
+    private void initSocket() throws IOException 
+    {
+        int port = 4220;
+        String host = "127.0.0.1";
+        sock = new Socket(host, port);
+        in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+        pout = new PrintWriter(sock.getOutputStream(), true);
     }
 
     /**
@@ -76,7 +98,7 @@ public class ChatDialog extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void sendBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendBtnActionPerformed
-        // TODO add your handling code here:
+        
     }//GEN-LAST:event_sendBtnActionPerformed
 
     /**
@@ -129,4 +151,9 @@ public class ChatDialog extends javax.swing.JDialog {
     private javax.swing.JTextArea msgTextArea;
     private javax.swing.JButton sendBtn;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void run() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

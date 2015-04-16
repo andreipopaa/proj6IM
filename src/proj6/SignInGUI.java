@@ -9,6 +9,9 @@ import javax.swing.JDialog;
 
 public class SignInGUI extends javax.swing.JFrame {
 
+    private Socket sock;
+    private BufferedReader in;
+    private PrintWriter pout;
     /**
      * Creates new form mainGUI
      */
@@ -103,20 +106,19 @@ public class SignInGUI extends javax.swing.JFrame {
 
     private void signInBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signInBtnActionPerformed
         int port = 4220;
-        String host = "127.0.0.1";
-        BufferedReader in = null;
-        Socket sock = null;
+        String host = "127.0.0.1";       
         errorLabel.setText("");
         
         try 
         {
             sock = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            PrintWriter pout = new PrintWriter(sock.getOutputStream(), true);
+            pout = new PrintWriter(sock.getOutputStream(), true);
             String myUsername = idField.getText();
             String passText = new String(pwdField.getPassword());
             String message = "1 " + idField.getText() + " " + passText;
             pout.println(message);
+            pout.flush();
             // feedback messages
             System.out.println("String sent to the server.");
             System.out.println("Waiting for the server to respond...");
@@ -125,22 +127,14 @@ public class SignInGUI extends javax.swing.JFrame {
             
             if (!loginSuccess.equals("false")) {
                 System.out.println("Message received from server: " + loginSuccess);
-                JDialog main = new MainGUI(this, true, sock, loginSuccess, myUsername);
+                JDialog main = new MainGUI(this, false, loginSuccess, myUsername);
                 this.setVisible(false);
                 main.setVisible(true);
-                Thread thrd = new Thread((Runnable) main);
-                thrd.start();
-                
-                try {
-                    thrd.join();                                       
-                }
-                catch (InterruptedException ie) {} 
             } else {
                 pwdField.setText("");
                 errorLabel.setText("**Invalid username or password");
             }
-            //do we need to close this socket?
-            //sock.close();
+            sock.close();
         }
         catch (IOException ioe)
         {

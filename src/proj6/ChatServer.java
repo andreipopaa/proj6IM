@@ -2,7 +2,6 @@ package proj6;
 
 import java.net.*;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ChatServer 
@@ -11,8 +10,7 @@ public class ChatServer
     
     public static boolean online[];
     
-    public static final HashMap<String, String> users;
-    
+    public static final HashMap<String, String> users; 
     static
     {
         users = new HashMap<String, String>();
