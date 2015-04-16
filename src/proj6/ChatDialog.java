@@ -21,18 +21,8 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
 
     ChatDialog() throws IOException {
         initComponents();
-        initSocket();
     }
     
-    private void initSocket() throws IOException 
-    {
-        int port = 4220;
-        String host = "127.0.0.1";
-        sock = new Socket(host, port);
-        in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-        pout = new PrintWriter(sock.getOutputStream(), true);
-    }
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -98,7 +88,15 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
     }// </editor-fold>//GEN-END:initComponents
 
     private void sendBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendBtnActionPerformed
-        
+        try {
+            int port = 4220;
+            String host = "127.0.0.1";
+            sock = new Socket(host, port);
+            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            pout = new PrintWriter(sock.getOutputStream(), true);
+        } catch (IOException ioe) {
+            System.err.println(ioe);
+        }
     }//GEN-LAST:event_sendBtnActionPerformed
 
     /**
@@ -154,6 +152,6 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
 
     @Override
     public void run() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        
     }
 }

@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ManageConnection implements Runnable{
     private Socket sock;
@@ -75,12 +77,44 @@ public class ManageConnection implements Runnable{
                             pout.println(response);
                             System.out.println("User Logged Off: " + usrName);
                             ChatServer.ConnectionArray[k] = null;
+                            //this is to notify all the buddies of a log off
+                            for(int f = 0; f < ChatServer.ConnectionArray.length; f++){
+                                if(ChatServer.ConnectionArray[f] != null){
+                                    Socket TEMP_SOCK = ChatServer.ConnectionArray[f];
+                                    PrintWriter OUT;
+                                    try {
+                                        OUT = new PrintWriter(TEMP_SOCK.getOutputStream());
+                                        OUT.println("4 " + usrName);
+                                        OUT.flush();
+                                    } catch (IOException ex) {
+                                        Logger.getLogger(ManageConnection.class.getName()).log(Level.SEVERE, null, ex);
+                                    }
+                                }
+                            } 
                         }
                         k++;
                     }
                     response = "LOGGEDOFF";
                     pout.println(response);
                     System.out.println("User Logged Off: " + usrName);
+                } else if(msgTokens[0].equals("4")){                 
+                   
+                    for (int i = 0; i < ChatServer.online.length; i++) {
+                        if (ChatServer.online[i] == true) {
+                            response += usernames[i] + " ";
+                        }
+                    }
+
+                    pout.println(response);
+                    System.out.println("new buddy list: " + response);
+                } else if(msgTokens[0].equals("5")){                  
+                    for (int i = 0; i < ChatServer.online.length; i++) {
+                        if (ChatServer.online[i] == true) {
+                            response += usernames[i] + " ";
+                        }
+                    }
+                    pout.println(response);
+                    System.out.println("new buddy list: " + response);
                 } else {
                     System.out.println("Something went wrong.");
                 }       
@@ -101,6 +135,21 @@ public class ManageConnection implements Runnable{
                                    "\nReceived password: " + pwd); 
             if (ChatServer.users.get(usrName).equals(pwd)) {
                 int i = 0;
+                //loop to notify buddy on
+                for(int f = 0; f < ChatServer.ConnectionArray.length; f++){
+                    if(ChatServer.ConnectionArray[f] != null){
+                        Socket TEMP_SOCK = ChatServer.ConnectionArray[f];
+                        PrintWriter OUT;
+                        try {
+                            OUT = new PrintWriter(TEMP_SOCK.getOutputStream());
+                            OUT.println("4 " + usrName);
+                            OUT.flush();
+                        } catch (IOException ex) {
+                            Logger.getLogger(ManageConnection.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                } 
+                
                 for (String s : usernames) {
                     if (s.equals(usrName)) {
                         ChatServer.online[i] = true;
@@ -108,8 +157,10 @@ public class ManageConnection implements Runnable{
                     }
                     i++;
                 }
+                
                 return true;
             }
+            //now we must send everyone else a log on me 
         }
         
         return false;     

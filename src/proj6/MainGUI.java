@@ -36,23 +36,6 @@ public class MainGUI extends javax.swing.JDialog {
         this.myUsername = user;
         dlm = new DefaultListModel();
         initFL(); 
-        initSocket();
-    }
-    
-    private void initSocket()
-    {
-        try 
-        {
-            int port = 4220;
-            String host = "127.0.0.1";
-            sock = new Socket(host, port);
-            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            pout = new PrintWriter(sock.getOutputStream(), true);
-        }
-        catch (IOException ioe)
-        {
-            System.err.println(ioe);
-        }
     }
     
     private void initFL() 
@@ -85,7 +68,7 @@ public class MainGUI extends javax.swing.JDialog {
     
     public void updateFriends () {
         for (String s : friendList) {
-            dlm.addElement("- " + s + "\n");
+            dlm.addElement(s);
         }
         onlineFriendsList.setModel(dlm);
     }
@@ -193,8 +176,13 @@ public class MainGUI extends javax.swing.JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void LOGOFFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LOGOFFActionPerformed
-    
-        try {           
+        int port = 4220;
+        String host = "127.0.0.1";
+            
+        try {   
+            sock = new Socket(host, port);
+            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            pout = new PrintWriter(sock.getOutputStream(), true);
             if(this.sock == null){
                 System.out.println("why is this socket null?");
             } else { 
