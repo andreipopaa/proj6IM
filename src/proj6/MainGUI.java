@@ -1,22 +1,61 @@
 package proj6;
 
 import java.net.Socket;
+import java.util.StringTokenizer;
 
 public class MainGUI extends javax.swing.JDialog implements Runnable {
     private Socket sock;
-    private String frindList[];
+    private String friendList[];
+    private String friends;
     /**
      * Creates new form MainGUI
+     * @param parent
+     * @param modal
+     * @param sock
+     * @param friends
      */
     public MainGUI(java.awt.Frame parent, boolean modal, Socket sock, String friends) {
         super(parent, modal);
         initComponents();
-        this.sock = sock;
-        
-        
+        this.friends = friends;
+        initFL(); 
+        //this.sock = sock;  System.out.println("here");
     }
     
-    public void updateFriends
+    private void initFL() 
+    {
+        initializeFL();
+        createFriendList();
+        updateFriends();
+    }
+    
+    private void initializeFL () 
+    {
+        int size = 0; 
+        StringTokenizer st = new StringTokenizer(friends, " ");
+        while (st.hasMoreElements()) {System.out.println((String)st.nextElement());
+            size++;
+        }
+       friendList = new String[size];
+    }
+    
+    private void createFriendList() {
+        int i = 0;
+        
+        StringTokenizer st = new StringTokenizer(friends, " ");
+        
+        while (st.hasMoreElements()) {
+            friendList[i] = (String)st.nextElement();
+            i++;
+        }
+    }
+    
+    public void updateFriends () {
+        for (String s : friendList) {
+            String text = onlineFriendsTxtArea.getText() + "- " + s + "\n";
+            onlineFriendsTxtArea.setText(text);
+        }
+    }
     
     public MainGUI(java.awt.Frame parent, boolean modal) {
         super(parent, modal);

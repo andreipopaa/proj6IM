@@ -123,8 +123,9 @@ public class SignInGUI extends javax.swing.JFrame {
             System.out.println("Waiting for the server to respond...");
             
             String loginSuccess = in.readLine();
-            System.out.println("Message received from server: " + loginSuccess);
+            
             if (!loginSuccess.equals("false")) {
+                System.out.println("Message received from server: " + loginSuccess);
                 JDialog main = new MainGUI(this, true, sock, loginSuccess);
                 this.setVisible(false);
                 main.setVisible(true);
