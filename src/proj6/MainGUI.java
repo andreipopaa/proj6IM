@@ -1,23 +1,35 @@
 package proj6;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JDialog;
 
 public class MainGUI extends javax.swing.JDialog implements Runnable {
     private Socket sock;
     private String friendList[];
     private String friends;
+    //this is to store who this user is to help with cedartalk 
+    private String myUsername;
     /**
      * Creates new form MainGUI
      * @param parent
      * @param modal
      * @param sock
      * @param friends
+     * @param user
      */
-    public MainGUI(java.awt.Frame parent, boolean modal, Socket sock, String friends) {
+    public MainGUI(java.awt.Frame parent, boolean modal, Socket sock, String friends, String user) {
         super(parent, modal);
         initComponents();
+        this.sock = sock;
         this.friends = friends;
+        this.myUsername = user;
         initFL(); 
         //this.sock = sock;  System.out.println("here");
     }
@@ -76,6 +88,8 @@ public class MainGUI extends javax.swing.JDialog implements Runnable {
         jScrollPane1 = new javax.swing.JScrollPane();
         onlineFriendsTxtArea = new javax.swing.JTextArea();
         jLabel1 = new javax.swing.JLabel();
+        LOGOFF = new javax.swing.JButton();
+        errorLabel = new javax.swing.JLabel();
 
         javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
         jDialog1.getContentPane().setLayout(jDialog1Layout);
@@ -108,6 +122,13 @@ public class MainGUI extends javax.swing.JDialog implements Runnable {
 
         jLabel1.setText("Online Friends");
 
+        LOGOFF.setText("LOGOFF");
+        LOGOFF.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                LOGOFFActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -120,6 +141,12 @@ public class MainGUI extends javax.swing.JDialog implements Runnable {
                         .addComponent(jLabel1)
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addGap(74, 74, 74)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(errorLabel)
+                    .addComponent(LOGOFF))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -128,11 +155,52 @@ public class MainGUI extends javax.swing.JDialog implements Runnable {
                 .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 394, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(101, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
+                .addComponent(errorLabel)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(LOGOFF))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void LOGOFFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LOGOFFActionPerformed
+        PrintWriter pout = null;
+            try {
+                //      int port = 4220;
+                //  String host = "127.0.0.1";
+                BufferedReader in = null;
+                Socket socket = this.sock;
+                errorLabel.setText("");
+                if(socket == null){
+                    System.out.println("why is this socket null?");
+                } else { 
+                    in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    pout = new PrintWriter(socket.getOutputStream(), true);
+                    String message = "2 " + this.myUsername;
+                    pout.println(message);
+                    // feedback messages
+                    System.out.println("String sent to the server. (logging off)");
+                    System.out.println("Waiting for the server to respond...");
+                    String logoffSuccess = "";
+
+                    logoffSuccess = in.readLine();
+
+                    if (logoffSuccess.equals("LOGGEDOFF")) {
+                        System.out.println("Message received from server: " + logoffSuccess);
+                        this.sock.close();
+                        System.exit(0);
+                        //do we need to close this socket?
+                        //sock.close();
+                    } else {
+                        System.out.println("logoff failed");
+                    }
+                }
+            } catch (IOException ioe) {
+                System.err.println(ioe);
+            }
+    }//GEN-LAST:event_LOGOFFActionPerformed
+
 
     /**
      * @param args the command line arguments
@@ -177,6 +245,8 @@ public class MainGUI extends javax.swing.JDialog implements Runnable {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton LOGOFF;
+    private javax.swing.JLabel errorLabel;
     private javax.swing.JDialog jDialog1;
     private javax.swing.JDialog jDialog2;
     private javax.swing.JLabel jLabel1;

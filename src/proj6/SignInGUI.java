@@ -106,7 +106,6 @@ public class SignInGUI extends javax.swing.JFrame {
         String host = "127.0.0.1";
         BufferedReader in = null;
         Socket sock = null;
-        
         errorLabel.setText("");
         
         try 
@@ -114,9 +113,9 @@ public class SignInGUI extends javax.swing.JFrame {
             sock = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             PrintWriter pout = new PrintWriter(sock.getOutputStream(), true);
-            
+            String myUsername = idField.getText();
             String passText = new String(pwdField.getPassword());
-            String message = "login " + idField.getText() + " " + passText;
+            String message = "1 " + idField.getText() + " " + passText;
             pout.println(message);
             // feedback messages
             System.out.println("String sent to the server.");
@@ -126,7 +125,7 @@ public class SignInGUI extends javax.swing.JFrame {
             
             if (!loginSuccess.equals("false")) {
                 System.out.println("Message received from server: " + loginSuccess);
-                JDialog main = new MainGUI(this, true, sock, loginSuccess);
+                JDialog main = new MainGUI(this, true, sock, loginSuccess, myUsername);
                 this.setVisible(false);
                 main.setVisible(true);
                 Thread thrd = new Thread((Runnable) main);
@@ -140,8 +139,8 @@ public class SignInGUI extends javax.swing.JFrame {
                 pwdField.setText("");
                 errorLabel.setText("**Invalid username or password");
             }
-            
-            sock.close();
+            //do we need to close this socket?
+            //sock.close();
         }
         catch (IOException ioe)
         {

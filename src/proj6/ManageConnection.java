@@ -31,42 +31,64 @@ public class ManageConnection implements Runnable{
     public void run() {
         // create Message object using the String that was received from the client 
         try { 
-            int i = 0;
+            
             PrintWriter pout;
             pout = new PrintWriter(sock.getOutputStream(), true);
             String response = "";
             
             BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            boolean keepRunning = true;
+            //while(keepRunning){
+                String message = in.readLine();
+                // feedback messages
+                if(message != null){
+                    System.out.println("Server received the following String: " + message);
+                    System.out.println("Server managing your request...");  
 
-            String message = in.readLine();
-            // feedback messages
-            System.out.println("Server received the following String: " + message);
-            System.out.println("Server managing your request...");  
-            
-            StringTokenizer st = new StringTokenizer(message, " ");
-            
-            while (st.hasMoreElements()) {
-                msgTokens[i] = (String)st.nextElement();
-                i++;
-            }
-            
-            // If a login message
-            if (msgTokens[0].equals("login")) {
-                // move to another function
-                boolean correct = checkLogin();
-                if (correct == true) {
-                    for (i = 0; i < ChatServer.online.length; i++) {
-                        if (ChatServer.online[i] == true) {
-                            response += usernames[i] + " ";
-                        }
+                    StringTokenizer st = new StringTokenizer(message, " ");
+                    int j = 0;
+                    while (st.hasMoreElements()) {
+                        msgTokens[j] = (String)st.nextElement();
+                        j++;
                     }
+
+                    // If a login message
+                    if (msgTokens[0].equals("1")) {
+                        // move to another function
+                        boolean correct = checkLogin();
+                        if (correct == true) {
+                            for (int i = 0; i < ChatServer.online.length; i++) {
+                                if (ChatServer.online[i] == true) {
+                                    response += usernames[i] + " ";
+                                }
+                            }
+                        }
+                        else {response += correct;}
+                        pout.println(response);
+                        System.out.println("Response sent: " + correct);
+                    } else if(msgTokens[0].equals("2")) {
+                        String usrName = msgTokens[1];
+                        int k = 0;
+                        for (String s : usernames) {
+                            if (s.equals(usrName)) {
+                                ChatServer.online[k] = false;
+                                response = "LOGGEDOFF";
+                                pout.println(response);
+                                System.out.println("User Logged Off: " + usrName);
+                                Socket tempSock = ChatServer.ConnectionArray[k];
+                                ChatServer.ConnectionArray[k] = null;
+                                //keepRunning = false; 
+                            }
+                            k++;
+                        }
+                        response = "LOGGEDOFF";
+                        pout.println(response);
+                        System.out.println("User Logged Off: " + usrName);
+                    } else {
+                        System.out.println("Something went wrong.");
+                    }       
                 }
-                else {response += correct;}
-                pout.println(response);
-                System.out.println("Response sent: " + correct);
-            } else {
-                System.out.println("Something went wrong.");
-            }       
+            //}
         }
         catch (IOException ioe)
         {
@@ -86,6 +108,7 @@ public class ManageConnection implements Runnable{
                 for (String s : usernames) {
                     if (s.equals(usrName)) {
                         ChatServer.online[i] = true;
+                        ChatServer.ConnectionArray[i] = this.sock;
                     }
                     i++;
                 }

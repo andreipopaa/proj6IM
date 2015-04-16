@@ -2,12 +2,17 @@ package proj6;
 
 import java.net.*;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class ChatServer 
 {
+    public static Socket ConnectionArray[];
+    
     public static boolean online[];
+    
     public static final HashMap<String, String> users;
+    
     static
     {
         users = new HashMap<String, String>();
@@ -20,6 +25,10 @@ public class ChatServer
     {
         int size = users.size();
         online = new boolean[size];
+        ConnectionArray = new Socket[size];
+        for(int i = 0; i < ConnectionArray.length; i++){
+            ConnectionArray[i] = null;
+        }
         
         try
         {
@@ -29,6 +38,7 @@ public class ChatServer
             {   
                 Socket client = sock.accept();
                 Thread thrd = new Thread(new ManageConnection(client));
+                
                 thrd.start();
 
                 try {
@@ -36,7 +46,7 @@ public class ChatServer
                 }
                 catch (InterruptedException ie) {} 
                 
-                client.close();
+                //client.close();
             }
         }
         catch (IOException ioe)
