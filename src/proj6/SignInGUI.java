@@ -5,13 +5,27 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
+import javax.swing.JList;
 
-public class SignInGUI extends javax.swing.JFrame {
+public class SignInGUI extends javax.swing.JFrame  {
 
     private Socket sock;
     private BufferedReader in;
     private PrintWriter pout;
+    
+    private String friendList[];
+    private String friends;
+    //this is to store who this user is to help with cedartalk 
+    private String myUsername;
+    DefaultListModel dlm;
+    /**
+    
+    
     /**
      * Creates new form mainGUI
      */
@@ -34,6 +48,11 @@ public class SignInGUI extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        MainGUI = new javax.swing.JDialog();
+        jLabel4 = new javax.swing.JLabel();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        onlineFriendsList = new javax.swing.JList();
+        LOGOFF = new javax.swing.JButton();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         jLabel3 = new javax.swing.JLabel();
@@ -41,6 +60,55 @@ public class SignInGUI extends javax.swing.JFrame {
         signInBtn = new javax.swing.JButton();
         pwdField = new javax.swing.JPasswordField();
         errorLabel = new javax.swing.JLabel();
+
+        MainGUI.setBounds(new java.awt.Rectangle(0, 23, 500, 500));
+
+        jLabel4.setText("Online Friends");
+
+        onlineFriendsList.setModel(new javax.swing.AbstractListModel() {
+            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+            public int getSize() { return strings.length; }
+            public Object getElementAt(int i) { return strings[i]; }
+        });
+        onlineFriendsList.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                onlineFriendsListMouseClicked(evt);
+            }
+        });
+        jScrollPane1.setViewportView(onlineFriendsList);
+
+        LOGOFF.setText("Log off");
+        LOGOFF.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                LOGOFFActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout MainGUILayout = new javax.swing.GroupLayout(MainGUI.getContentPane());
+        MainGUI.getContentPane().setLayout(MainGUILayout);
+        MainGUILayout.setHorizontalGroup(
+            MainGUILayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MainGUILayout.createSequentialGroup()
+                .addGap(21, 21, 21)
+                .addComponent(jLabel4)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, MainGUILayout.createSequentialGroup()
+                .addContainerGap(278, Short.MAX_VALUE)
+                .addComponent(LOGOFF)
+                .addGap(33, 33, 33))
+        );
+        MainGUILayout.setVerticalGroup(
+            MainGUILayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(MainGUILayout.createSequentialGroup()
+                .addGap(18, 18, 18)
+                .addComponent(jLabel4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 212, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(LOGOFF)
+                .addContainerGap(206, Short.MAX_VALUE))
+        );
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -105,13 +173,25 @@ public class SignInGUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void signInBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signInBtnActionPerformed
-        int port = 4220;
+        Thread thrd = new Thread(new ClientConnection(this, idField.getText(), new String(pwdField.getPassword())));
+                
+        thrd.start();
+
+        try {
+            thrd.join();                                       
+        }
+        catch (InterruptedException ie) {} 
+                
+        
+        
+        
+        /*int port = 4220;
         String host = "127.0.0.1";       
         errorLabel.setText("");
         
         try 
         {
-            sock = new Socket(host, port);
+            this.sock = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             pout = new PrintWriter(sock.getOutputStream(), true);
             String myUsername = idField.getText();
@@ -127,21 +207,118 @@ public class SignInGUI extends javax.swing.JFrame {
             
             if (!loginSuccess.equals("false")) {
                 System.out.println("Message received from server: " + loginSuccess);
-                JDialog main = new MainGUI(this, false, loginSuccess, myUsername);
+                JDialog main = new MainGUI(this, false, loginSuccess, myUsername, sock);
                 this.setVisible(false);
                 main.setVisible(true);
+                //System.exit(0);
             } else {
                 pwdField.setText("");
                 errorLabel.setText("**Invalid username or password");
             }
-            sock.close();
+
+            //sock.close();
         }
         catch (IOException ioe)
         {
             System.err.println(ioe);
         }
+        */
     }//GEN-LAST:event_signInBtnActionPerformed
 
+    private void LOGOFFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LOGOFFActionPerformed
+        int port = 4220;
+        String host = "127.0.0.1";
+            
+        try {   
+            String message = "2 " + this.myUsername; 
+            pout.println(message);
+            // feedback messages
+            System.out.println("String sent to the server. (logging off)");
+            System.out.println("Waiting for the server to respond...");
+            String logoffSuccess = "";
+
+            logoffSuccess = in.readLine();
+
+            if (logoffSuccess.equals("LOGGEDOFF")) {
+                System.out.println("Message received from server: " + logoffSuccess);
+                this.sock.close();
+                System.exit(0);
+            } else {
+                System.out.println("logoff failed");
+            }
+        }
+        catch (IOException ioe) {
+            System.err.println(ioe);
+        }
+        
+    }//GEN-LAST:event_LOGOFFActionPerformed
+
+    private void onlineFriendsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_onlineFriendsListMouseClicked
+        JList list = (JList)evt.getSource();
+        if (evt.getClickCount() == 2) {
+            int index = list.locationToIndex(evt.getPoint());
+            System.out.println("index: "+index);
+            JDialog chat = null;
+            try {
+                chat = new ChatDialog();
+            } catch (IOException ex) {
+                Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            chat.setVisible(true);
+            Thread thrd = new Thread((Runnable) chat); 
+            thrd.start();
+
+            try {
+                thrd.join();                                       
+            }
+            catch (InterruptedException ie) {} 
+        }
+    }//GEN-LAST:event_onlineFriendsListMouseClicked
+    private void initFL() 
+    {
+        initializeFL();
+        createFriendList();
+        updateFriends();
+    }
+    
+    private void initializeFL () 
+    {
+        int size = 0; 
+        StringTokenizer st = new StringTokenizer(friends, " ");
+        while (st.hasMoreElements()) {System.out.println((String)st.nextElement());
+            size++;
+        }
+       friendList = new String[size];
+    }
+    
+    private void createFriendList() {
+        int i = 0;
+        
+        StringTokenizer st = new StringTokenizer(friends, " ");
+        
+        while (st.hasMoreElements()) {
+            friendList[i] = (String)st.nextElement();
+            i++;
+        }
+    }
+    public void setErrorLabel(){
+        pwdField.setText("");
+        errorLabel.setText("**Invalid username or password");
+    }
+    public void SignInComplete(){
+        pwdField.setText("");
+        errorLabel.setText("");
+        
+        MainGUI.setVisible(true);
+        
+        
+    } 
+    public void updateFriends () {
+        for (String s : friendList) {
+            dlm.addElement(s);
+        }
+        onlineFriendsList.setModel(dlm);
+    }
     /**
      * @param args the command line arguments
      */
@@ -179,11 +356,16 @@ public class SignInGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JButton LOGOFF;
+    private javax.swing.JDialog MainGUI;
     private javax.swing.JLabel errorLabel;
     private javax.swing.JTextField idField;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JList onlineFriendsList;
     private javax.swing.JPasswordField pwdField;
     private javax.swing.JButton signInBtn;
     // End of variables declaration//GEN-END:variables

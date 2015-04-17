@@ -12,7 +12,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
 import javax.swing.JList;
 
-public class MainGUI extends javax.swing.JDialog {
+public class MainGUI extends javax.swing.JDialog implements Runnable{
     private Socket sock;
     private String friendList[];
     private String friends;
@@ -29,13 +29,27 @@ public class MainGUI extends javax.swing.JDialog {
      * @param friends
      * @param user
      */
-    public MainGUI(java.awt.Frame parent, boolean modal, String friends, String user) {
+    public MainGUI(java.awt.Frame parent, boolean modal, String friends, String user, Socket sock) {
         super(parent, modal);
         initComponents();
         this.friends = friends;
         this.myUsername = user;
         dlm = new DefaultListModel();
         initFL(); 
+        this.sock = sock;
+        //we want the main Gui to have a new socket 
+        /*int port = 4220;
+        String host = "127.0.0.1";       
+        try {
+            this.sock = new Socket(host, port);
+        } catch (IOException ex) {
+            Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        */
+        //now we want this to have its own thread 
+        Thread thrd = new Thread(this);
+                
+        thrd.start();
     }
     
     private void initFL() 
@@ -281,4 +295,24 @@ public class MainGUI extends javax.swing.JDialog {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JList onlineFriendsList;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void run() {
+            try { 
+            
+            PrintWriter pout;
+            pout = new PrintWriter(this.sock.getOutputStream(), true);
+            String response = "";
+            
+            BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            String message = "";
+            while((message = in.readLine()) != null){  
+             System.out.println("thread works");
+            }
+        }    
+        catch (IOException ioe)
+        {
+            System.err.println(ioe);
+        }
+    }
 }
