@@ -1,34 +1,27 @@
 package proj6;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import static java.lang.System.in;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
 import javax.swing.JList;
+import javax.swing.SwingUtilities;
 
-public class SignInGUI extends javax.swing.JFrame  {
+public class SignInGUI extends javax.swing.JFrame implements Observer {
 
-    private Socket sock;
-    private BufferedReader in;
-    private PrintWriter pout;
-    
+    private ClientConnection clientConn;
+    private MainGUI main;
     private String friendList[];
     private String friends;
     //this is to store who this user is to help with cedartalk 
-    private String myUsername;
-    DefaultListModel dlm;
-    /**
+    private String username;
+    private String server;
+    private int port;
     
-    
-    /**
-     * Creates new form mainGUI
-     */
     public SignInGUI() {
         initComponents();
         pwdField.addActionListener(new java.awt.event.ActionListener() {
@@ -60,6 +53,10 @@ public class SignInGUI extends javax.swing.JFrame  {
         signInBtn = new javax.swing.JButton();
         pwdField = new javax.swing.JPasswordField();
         errorLabel = new javax.swing.JLabel();
+        serverTF = new javax.swing.JTextField();
+        portTF = new javax.swing.JTextField();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
 
         MainGUI.setBounds(new java.awt.Rectangle(0, 23, 500, 500));
 
@@ -126,27 +123,43 @@ public class SignInGUI extends javax.swing.JFrame  {
             }
         });
 
+        serverTF.setText("127.0.0.1");
+
+        portTF.setText("4220");
+
+        jLabel5.setText("           IP:");
+
+        jLabel6.setText("        Port:");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(63, 63, 63)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(20, 20, 20)
-                        .addComponent(jLabel1))
-                    .addComponent(jLabel2)
-                    .addComponent(jLabel3)
-                    .addComponent(idField)
-                    .addComponent(pwdField, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGap(28, 28, 28)
-                        .addComponent(signInBtn)))
-                .addContainerGap(64, Short.MAX_VALUE))
-            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(errorLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(errorLabel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addGap(20, 20, 20)
+                                    .addComponent(jLabel1))
+                                .addComponent(jLabel2)
+                                .addComponent(jLabel3)
+                                .addComponent(idField)
+                                .addComponent(pwdField, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
+                                .addGroup(layout.createSequentialGroup()
+                                    .addGap(28, 28, 28)
+                                    .addComponent(signInBtn)))
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                .addComponent(serverTF, javax.swing.GroupLayout.DEFAULT_SIZE, 133, Short.MAX_VALUE)
+                                .addComponent(portTF)))
+                        .addGap(0, 53, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -163,162 +176,75 @@ public class SignInGUI extends javax.swing.JFrame  {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(pwdField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
-                .addComponent(signInBtn)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(signInBtn)
+                        .addGap(39, 39, 39))
+                    .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(serverTF, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addComponent(jLabel5)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(portTF, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jLabel6))
+                .addGap(18, 18, 18)
                 .addComponent(errorLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 28, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(279, Short.MAX_VALUE))
+                .addContainerGap(207, Short.MAX_VALUE))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void signInBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signInBtnActionPerformed
-        Thread thrd = new Thread(new ClientConnection(this, idField.getText(), new String(pwdField.getPassword())));
-                
-        thrd.start();
-
-        try {
-            thrd.join();                                       
-        }
-        catch (InterruptedException ie) {} 
-                
+        server = serverTF.getText();
+        port = Integer.parseInt(portTF.getText());
+        clientConn = new ClientConnection(server, port);
         
-        
-        
-        /*int port = 4220;
-        String host = "127.0.0.1";       
-        errorLabel.setText("");
-        
-        try 
-        {
-            this.sock = new Socket(host, port);
-            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            pout = new PrintWriter(sock.getOutputStream(), true);
-            String myUsername = idField.getText();
-            String passText = new String(pwdField.getPassword());
-            String message = "1 " + idField.getText() + " " + passText;
-            pout.println(message);
-            pout.flush();
-            // feedback messages
-            System.out.println("String sent to the server.");
-            System.out.println("Waiting for the server to respond...");
-            
-            String loginSuccess = in.readLine();
-            
-            if (!loginSuccess.equals("false")) {
-                System.out.println("Message received from server: " + loginSuccess);
-                JDialog main = new MainGUI(this, false, loginSuccess, myUsername, sock);
-                this.setVisible(false);
-                main.setVisible(true);
-                //System.exit(0);
-            } else {
-                pwdField.setText("");
-                errorLabel.setText("**Invalid username or password");
-            }
-
-            //sock.close();
-        }
-        catch (IOException ioe)
-        {
-            System.err.println(ioe);
-        }
-        */
+        clientConn.addObserver(this);
+        username = idField.getText();
+        String signIn = "1 " + username + " " + new String(pwdField.getPassword());
+        clientConn.send(signIn);
+        System.out.println("String sent to the server:" + signIn);
     }//GEN-LAST:event_signInBtnActionPerformed
-
+    
+    
     private void LOGOFFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LOGOFFActionPerformed
-        int port = 4220;
-        String host = "127.0.0.1";
-            
-        try {   
-            String message = "2 " + this.myUsername; 
-            pout.println(message);
-            // feedback messages
-            System.out.println("String sent to the server. (logging off)");
-            System.out.println("Waiting for the server to respond...");
-            String logoffSuccess = "";
-
-            logoffSuccess = in.readLine();
-
-            if (logoffSuccess.equals("LOGGEDOFF")) {
-                System.out.println("Message received from server: " + logoffSuccess);
-                this.sock.close();
-                System.exit(0);
-            } else {
-                System.out.println("logoff failed");
-            }
-        }
-        catch (IOException ioe) {
-            System.err.println(ioe);
-        }
-        
     }//GEN-LAST:event_LOGOFFActionPerformed
 
     private void onlineFriendsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_onlineFriendsListMouseClicked
-        JList list = (JList)evt.getSource();
-        if (evt.getClickCount() == 2) {
-            int index = list.locationToIndex(evt.getPoint());
-            System.out.println("index: "+index);
-            JDialog chat = null;
-            try {
-                chat = new ChatDialog();
-            } catch (IOException ex) {
-                Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            chat.setVisible(true);
-            Thread thrd = new Thread((Runnable) chat); 
-            thrd.start();
-
-            try {
-                thrd.join();                                       
-            }
-            catch (InterruptedException ie) {} 
-        }
     }//GEN-LAST:event_onlineFriendsListMouseClicked
-    private void initFL() 
-    {
-        initializeFL();
-        createFriendList();
-        updateFriends();
-    }
+
     
-    private void initializeFL () 
-    {
-        int size = 0; 
-        StringTokenizer st = new StringTokenizer(friends, " ");
-        while (st.hasMoreElements()) {System.out.println((String)st.nextElement());
-            size++;
-        }
-       friendList = new String[size];
-    }
-    
-    private void createFriendList() {
-        int i = 0;
-        
-        StringTokenizer st = new StringTokenizer(friends, " ");
-        
-        while (st.hasMoreElements()) {
-            friendList[i] = (String)st.nextElement();
-            i++;
-        }
-    }
     public void setErrorLabel(){
         pwdField.setText("");
         errorLabel.setText("**Invalid username or password");
     }
-    public void SignInComplete(){
+    public void SignInComplete(String friends){
         pwdField.setText("");
         errorLabel.setText("");
-        
-        MainGUI.setVisible(true);
-        
-        
+        System.out.println("Message received from server: " + friends);
+        main = new MainGUI(this, false, friends, username, clientConn);    
+   
+        this.setVisible(false);
+        main.setVisible(true);
     } 
-    public void updateFriends () {
-        for (String s : friendList) {
-            dlm.addElement(s);
-        }
-        onlineFriendsList.setModel(dlm);
+    
+    @Override
+    public void update(Observable o, Object arg) {
+        final Object finalArg = arg;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                String message = finalArg.toString();
+                System.out.println(message);
+                if (!message.equals("false") && message.charAt(0) != '3' && message.charAt(0) != '4' && message.charAt(0) != '5') {
+                    SignInComplete(message);
+                } else {
+                    setErrorLabel();
+                }
+            }
+        });
     }
+    
     /**
      * @param args the command line arguments
      */
@@ -349,7 +275,7 @@ public class SignInGUI extends javax.swing.JFrame  {
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
+            public void run() {              
                 new SignInGUI().setVisible(true);
             }
         });
@@ -364,9 +290,13 @@ public class SignInGUI extends javax.swing.JFrame  {
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JList onlineFriendsList;
+    private javax.swing.JTextField portTF;
     private javax.swing.JPasswordField pwdField;
+    private javax.swing.JTextField serverTF;
     private javax.swing.JButton signInBtn;
     // End of variables declaration//GEN-END:variables
 }

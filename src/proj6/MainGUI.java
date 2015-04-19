@@ -2,25 +2,29 @@ package proj6;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.Socket;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JDialog;
 import javax.swing.JList;
+import javax.swing.SwingUtilities;
 
-public class MainGUI extends javax.swing.JDialog implements Runnable{
-    private Socket sock;
+public class MainGUI extends javax.swing.JDialog implements Observer{
     private String friendList[];
     private String friends;
     private PrintWriter pout;
     private BufferedReader in;
-    //this is to store who this user is to help with cedartalk 
-    private String myUsername;
+    private String username;
+    private ClientConnection clientConn;
+    public ChatDialog[] chats;
+    private int maxChats = 100;
     DefaultListModel dlm;
+    private String[] msgTokens = new String[4];
+    
     /**
      * Creates new form MainGUI
      * @param parent
@@ -29,27 +33,16 @@ public class MainGUI extends javax.swing.JDialog implements Runnable{
      * @param friends
      * @param user
      */
-    public MainGUI(java.awt.Frame parent, boolean modal, String friends, String user, Socket sock) {
+    public MainGUI(java.awt.Frame parent, boolean modal, String friends, String user, ClientConnection cc) {
         super(parent, modal);
         initComponents();
         this.friends = friends;
-        this.myUsername = user;
+        this.username = user;
         dlm = new DefaultListModel();
+        clientConn = cc;
+        clientConn.addObserver(this);
+        chats = new ChatDialog[maxChats];
         initFL(); 
-        this.sock = sock;
-        //we want the main Gui to have a new socket 
-        /*int port = 4220;
-        String host = "127.0.0.1";       
-        try {
-            this.sock = new Socket(host, port);
-        } catch (IOException ex) {
-            Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        */
-        //now we want this to have its own thread 
-        Thread thrd = new Thread(this);
-                
-        thrd.start();
     }
     
     private void initFL() 
@@ -63,7 +56,7 @@ public class MainGUI extends javax.swing.JDialog implements Runnable{
     {
         int size = 0; 
         StringTokenizer st = new StringTokenizer(friends, " ");
-        while (st.hasMoreElements()) {System.out.println((String)st.nextElement());
+        while (st.hasMoreElements()) {System.out.println("Friend: " + (String)st.nextElement());
             size++;
         }
        friendList = new String[size];
@@ -84,6 +77,16 @@ public class MainGUI extends javax.swing.JDialog implements Runnable{
         for (String s : friendList) {
             dlm.addElement(s);
         }
+        onlineFriendsList.setModel(dlm);
+    }
+    
+    public void addFriend (String f) {
+        dlm.addElement(f);
+        onlineFriendsList.setModel(dlm);
+    }
+    
+    public void removeFriend (String f) {
+        dlm.removeElement(f);
         onlineFriendsList.setModel(dlm);
     }
     
@@ -189,37 +192,14 @@ public class MainGUI extends javax.swing.JDialog implements Runnable{
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    
     private void LOGOFFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_LOGOFFActionPerformed
-        int port = 4220;
-        String host = "127.0.0.1";
-            
-        try {   
-            sock = new Socket(host, port);
-            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            pout = new PrintWriter(sock.getOutputStream(), true);
-            if(this.sock == null){
-                System.out.println("why is this socket null?");
-            } else { 
-                String message = "2 " + this.myUsername; 
-                pout.println(message);
-                // feedback messages
-                System.out.println("String sent to the server. (logging off)");
-                System.out.println("Waiting for the server to respond...");
-                String logoffSuccess = "";
-                
-                logoffSuccess = in.readLine();
-
-                if (logoffSuccess.equals("LOGGEDOFF")) {
-                    System.out.println("Message received from server: " + logoffSuccess);
-                    this.sock.close();
-                    System.exit(0);
-                } else {
-                    System.out.println("logoff failed");
-                }
-            }
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
+        String message = "2 " + this.username; 
+        clientConn.send(message);
+        // feedback messages
+        System.out.println("String sent to the server. (logging off)");
+        clientConn.close();
+        System.exit(0);
     }//GEN-LAST:event_LOGOFFActionPerformed
 
     private void onlineFriendsListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_onlineFriendsListMouseClicked
@@ -227,23 +207,60 @@ public class MainGUI extends javax.swing.JDialog implements Runnable{
         if (evt.getClickCount() == 2) {
             int index = list.locationToIndex(evt.getPoint());
             System.out.println("index: "+index);
-            JDialog chat = null;
-            try {
-                chat = new ChatDialog();
-            } catch (IOException ex) {
-                Logger.getLogger(MainGUI.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            chat.setVisible(true);
-            Thread thrd = new Thread((Runnable) chat); 
-            thrd.start();
-
-            try {
-                thrd.join();                                       
-            }
-            catch (InterruptedException ie) {} 
+            newChat(list.getSelectedValue().toString());
         }
     }//GEN-LAST:event_onlineFriendsListMouseClicked
 
+    private ChatDialog newChat (String friend) {
+        for (int i = 0; i < maxChats; i++) {
+            if (chats[i] == null) {
+                chats[i] = new ChatDialog(this, false, clientConn, username, friend);
+                chats[i].setVisible(true);
+                return (ChatDialog)chats[i];
+            }
+        }
+        return null;    
+    }
+    
+    public void update(Observable o, Object arg) {
+        final Object finalArg = arg;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                String message = finalArg.toString();
+                System.out.println("Message received from server: " + message);
+                if (message.charAt(0) == '3') {
+                    newDialogTest(message);
+                } else if (message.charAt(0) == '4') {
+                    addFriend(message.substring(2));
+                } else if (message.charAt(0) == '5') {
+                    removeFriend(message.substring(2));
+                }
+            }
+        });
+    }
+    
+    private void newDialogTest (String message) {
+        StringTokenizer st = new StringTokenizer(message, " ");
+        int msgTextIndex = 0;
+        int j = 0;
+        while (st.hasMoreElements() && j < 3) {
+            String tk = (String)st.nextElement();
+            msgTokens[j] = tk;
+            j++;
+            msgTextIndex += tk.length() + 1;
+        }System.out.println ("New dialog test");
+        boolean alreadyExists = false;
+        for (int i = 0; i < maxChats; i++) {
+            if (chats[i] != null && (chats[i].getFriend()).equals(msgTokens[1]) ) {
+                alreadyExists = true;
+                break;
+            }
+        }
+        if (alreadyExists == false) {
+            newChat(msgTokens[1]).addMessage(message.substring(msgTextIndex));
+        }
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -295,24 +312,4 @@ public class MainGUI extends javax.swing.JDialog implements Runnable{
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JList onlineFriendsList;
     // End of variables declaration//GEN-END:variables
-
-    @Override
-    public void run() {
-            try { 
-            
-            PrintWriter pout;
-            pout = new PrintWriter(this.sock.getOutputStream(), true);
-            String response = "";
-            
-            BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            String message = "";
-            while((message = in.readLine()) != null){  
-             System.out.println("thread works");
-            }
-        }    
-        catch (IOException ioe)
-        {
-            System.err.println(ioe);
-        }
-    }
 }

@@ -11,14 +11,22 @@ import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ManageConnection implements Runnable{
+public class ManageConnection extends Thread {
+    private String username;
     private Socket sock;
     private String msgTokens[];
     private String usernames[];
+    private PrintWriter pout;
+    private BufferedReader in;
+    private final ManageConnection[] clients;
+    private int maxClients;
 
-    public ManageConnection(Socket sock)
+    public ManageConnection(Socket sock, ManageConnection[] clients)
     {
         this.sock = sock;
+        this.clients = clients;
+        maxClients = clients.length;
+        
         msgTokens = new String[3];
         Set<String> usrN = ChatServer.users.keySet();
         usernames = new String[usrN.size()];
@@ -33,95 +41,70 @@ public class ManageConnection implements Runnable{
     public void run() {
         // create Message object using the String that was received from the client 
         try { 
-            
-            PrintWriter pout;
             pout = new PrintWriter(sock.getOutputStream(), true);
-            String response = "";
+            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
             
-            BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+            String response = "";
             String message;
+            
             while((message = in.readLine()) != null){  
                 if(message != null){
                     // feedback messages
                     System.out.println("Server received the following String: " + message);
                     System.out.println("Server managing your request...");  
-
+                    
                     StringTokenizer st = new StringTokenizer(message, " ");
                     int j = 0;
-                    while (st.hasMoreElements()) {
-                        msgTokens[j] = (String)st.nextElement();
+                    while (st.hasMoreElements() && j < 3) {
+                        String tk = (String)st.nextElement();
+                        msgTokens[j] = tk;
                         j++;
                     }
 
                     // If a login message
                     if (msgTokens[0].equals("1")) {
-                        // move to another function
                         boolean correct = checkLogin();
                         if (correct == true) {
-                            for (int i = 0; i < ChatServer.online.length; i++) {
-                                if (ChatServer.online[i] == true) {
-                                    response += usernames[i] + " ";
-                                }
-                            }
-                        }
-                        else {response += correct;}
-                        pout.println(response);
-                        System.out.println("Response sent: " + correct);
+                            System.out.println("Valid credentials: " + correct);
+                        } else {
+                            pout.println("false");
+                        }                    
                     } else if(msgTokens[0].equals("2")) {
                         String usrName = msgTokens[1];
-                        int k = 0;
-                        for (String s : usernames) {
-                            if (s.equals(usrName)) {
-                                ChatServer.online[k] = false;
-                                response = "LOGGEDOFF";
-                                pout.println(response);
-                                System.out.println("User Logged Off: " + usrName);
-                                ChatServer.ConnectionArray[k] = null;
-                                //this is to notify all the buddies of a log off
-                                for(int f = 0; f < ChatServer.ConnectionArray.length; f++){
-                                    if(ChatServer.ConnectionArray[f] != null){
-                                        Socket TEMP_SOCK = ChatServer.ConnectionArray[f];
-                                        if(TEMP_SOCK != null){
-                                            PrintWriter OUT;
-                                            try {
-                                                OUT = new PrintWriter(TEMP_SOCK.getOutputStream());
-                                                OUT.println("4 " + usrName);
-                                                OUT.flush();
-                                            } catch (IOException ex) {
-                                                Logger.getLogger(ManageConnection.class.getName()).log(Level.SEVERE, null, ex);
-                                            }
-                                        }
-                                    }
-                                } 
+                        // notify everyone
+                        synchronized (this) {
+                            for (int i = 0; i < maxClients; i++) {
+                              if (clients[i] != null && clients[i] != this && clients[i].username != null) {
+                                clients[i].pout.println("5 " + username);
+                              }
                             }
-                            k++;
                         }
-                        response = "LOGGEDOFF";
-                        pout.println(response);
+                        // forget current thread
+                        synchronized (this) {
+                            for (int i = 0; i < maxClients; i++) {
+                              if (clients[i] == this) {
+                                clients[i] = null;
+                              }
+                            }
+                        }
+                        in.close();
+                        pout.close();
+                        sock.close();
                         System.out.println("User Logged Off: " + usrName);
-                    } else if(msgTokens[0].equals("4")){                 
-
-                        for (int i = 0; i < ChatServer.online.length; i++) {
-                            if (ChatServer.online[i] == true) {
-                                response += usernames[i] + " ";
+                    } else if(msgTokens[0].equals("3")){
+                        synchronized (this) {
+                            for (int i = 0; i < maxClients; i++) {
+                              if (clients[i] != null && (clients[i].username).equals(msgTokens[2]) ) {
+                                  System.out.println("Message: " + message + ". Sent to: " + clients[i].username);
+                                  clients[i].pout.println(message);
+                              }
                             }
                         }
-
-                        pout.println(response);
-                        System.out.println("new buddy list: " + response);
-                    } else if(msgTokens[0].equals("5")){                  
-                        for (int i = 0; i < ChatServer.online.length; i++) {
-                            if (ChatServer.online[i] == true) {
-                                response += usernames[i] + " ";
-                            }
-                        }
-                        pout.println(response);
-                        System.out.println("new buddy list: " + response);
                     } else {
                         System.out.println("Something went wrong.");
-                    }       
+                    } 
                 }
-            }
+            } 
         }    
         catch (IOException ioe)
         {
@@ -137,36 +120,30 @@ public class ManageConnection implements Runnable{
             System.out.println("Required password: " + ChatServer.users.get(usrName) + 
                                    "\nReceived password: " + pwd); 
             if (ChatServer.users.get(usrName).equals(pwd)) {
-                int i = 0;
                 //loop to notify buddy on
-                for(int f = 0; f < ChatServer.ConnectionArray.length; f++){
-                    if(ChatServer.ConnectionArray[f] != null){
-                        
-                        Socket TEMP_SOCK = ChatServer.ConnectionArray[f];
-                        if (TEMP_SOCK != null){
-                            PrintWriter OUT;
-                            try {
-                                OUT = new PrintWriter(TEMP_SOCK.getOutputStream());
-                                OUT.println("4 " + usrName);
-                                OUT.flush();
-                            } catch (IOException ex) {
-                                Logger.getLogger(ManageConnection.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                synchronized (this) {    
+                    username = usrName;
+                    
+                    String online = username + " ";
+                    
+                    for (int i = 0; i < maxClients; i++) {
+                        if (clients[i] != null && clients[i] != this) {
+                            online += clients[i].username + " ";
+                            clients[i].pout.println("4 " + username);
                         }
                     }
-                } 
-                
-                for (String s : usernames) {
-                    if (s.equals(usrName)) {
-                        ChatServer.online[i] = true;
-                        ChatServer.ConnectionArray[i] = this.sock;
-                    }
-                    i++;
-                }
-                
+                    System.out.println("Message sent to client:" + online);
+                    pout.println(online);
+                  }
                 return true;
             }
-            //now we must send everyone else a log on me 
+            else {
+                for (int i = 0; i < maxClients; i++) {
+                        if (clients[i] == this) {
+                            clients[i] = null;
+                        }
+                }
+            }
         }
         
         return false;     

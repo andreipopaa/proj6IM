@@ -6,9 +6,10 @@ import java.util.HashMap;
 
 public class ChatServer 
 {
-    public static Socket ConnectionArray[];
-    
-    public static boolean online[];
+    private static ServerSocket serverSock = null;
+    private static Socket client = null;
+    private static final int maxClients = 100;
+    private static final ManageConnection[] clients = new ManageConnection[maxClients];
     
     public static final HashMap<String, String> users; 
     static
@@ -17,34 +18,25 @@ public class ChatServer
         users.put("andreipopa", "pwd");
         users.put("dillonhenschen", "password");
         users.put("drg", "drg");
+        users.put("test", "test");
     }
     
     public static void main(String[] args)
     {
-        int size = users.size();
-        online = new boolean[size];
-        ConnectionArray = new Socket[size];
-        for(int i = 0; i < ConnectionArray.length; i++){
-            ConnectionArray[i] = null;
-        }
-        
+        int portNumber = 4220;
         try
         {
-            ServerSocket sock = new ServerSocket(4220);
+            serverSock = new ServerSocket(portNumber);
             
             while (true)
             {   
-                Socket client = sock.accept();
-                Thread thrd = new Thread(new ManageConnection(client));
-                
-                thrd.start();
-
-                try {
-                    thrd.join();                                       
+                client = serverSock.accept();
+                for (int i = 0; i < maxClients; i++) {
+                    if (clients[i] == null) {
+                      (clients[i] = new ManageConnection(client, clients)).start();
+                      break;
+                    }
                 }
-                catch (InterruptedException ie) {} 
-                
-                //client.close();
             }
         }
         catch (IOException ioe)

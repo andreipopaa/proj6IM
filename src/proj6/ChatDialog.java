@@ -1,25 +1,27 @@
 package proj6;
 
-import java.io.BufferedReader;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.StringTokenizer;
+import javax.swing.SwingUtilities;
 
-public class ChatDialog extends javax.swing.JDialog implements Runnable{
-    private Socket sock;
-    private PrintWriter pout;
-    private BufferedReader in;
+public class ChatDialog extends javax.swing.JDialog implements Observer{
+    private String username;
+    private String friendsName;
+    ClientConnection clientConn;
+    private String[] msgTokens = new String[4];
     /**
      * Creates new form chatDialog
      */
     
-    public ChatDialog(java.awt.Frame parent, boolean modal) {
+    public ChatDialog(java.awt.Dialog parent, boolean modal, ClientConnection cc, String usr, String friend) {
         super(parent, modal);
-        initComponents();
-    }
-
-    ChatDialog() throws IOException {
+        clientConn = cc;
+        clientConn.addObserver(this);
+        username = usr;
+        friendsName = friend;
         initComponents();
     }
     
@@ -33,17 +35,17 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
     private void initComponents() {
 
         jScrollPane1 = new javax.swing.JScrollPane();
-        jTextArea1 = new javax.swing.JTextArea();
+        conversationArea = new javax.swing.JTextArea();
         sendBtn = new javax.swing.JButton();
         jScrollPane2 = new javax.swing.JScrollPane();
         msgTextArea = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
-        jTextArea1.setEditable(false);
-        jTextArea1.setColumns(20);
-        jTextArea1.setRows(5);
-        jScrollPane1.setViewportView(jTextArea1);
+        conversationArea.setEditable(false);
+        conversationArea.setColumns(20);
+        conversationArea.setRows(5);
+        jScrollPane1.setViewportView(conversationArea);
 
         sendBtn.setText("Send");
         sendBtn.addActionListener(new java.awt.event.ActionListener() {
@@ -54,6 +56,11 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
 
         msgTextArea.setColumns(20);
         msgTextArea.setRows(5);
+        msgTextArea.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                msgTextAreaKeyPressed(evt);
+            }
+        });
         jScrollPane2.setViewportView(msgTextArea);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -74,31 +81,64 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 189, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 66, Short.MAX_VALUE))
-                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addContainerGap())
+                        .addGap(30, 30, 30))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 68, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())))
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void sendBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendBtnActionPerformed
-        try {
-            int port = 4220;
-            String host = "127.0.0.1";
-            sock = new Socket(host, port);
-            in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            pout = new PrintWriter(sock.getOutputStream(), true);
-        } catch (IOException ioe) {
-            System.err.println(ioe);
-        }
+        String message = "3 " + username + " " + friendsName + " " + msgTextArea.getText();
+        conversationArea.setText(conversationArea.getText() + username + ": " + msgTextArea.getText() + "\n");
+        msgTextArea.setText("");
+        clientConn.send(message);
     }//GEN-LAST:event_sendBtnActionPerformed
 
+    private void msgTextAreaKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_msgTextAreaKeyPressed
+        if(evt.getKeyCode() == KeyEvent.VK_ENTER)
+        {
+            sendBtnActionPerformed(null);
+        }
+    }//GEN-LAST:event_msgTextAreaKeyPressed
+
+    public void update(Observable o, Object arg) {
+        final Object finalArg = arg;
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                String message = finalArg.toString();
+                System.out.println("Message received from server (chat dialog): " + message);
+                if (message.charAt(0) == '3') {
+                    StringTokenizer st = new StringTokenizer(message, " ");
+                    int msgTextIndex = 0;
+                    int j = 0;
+                    while (st.hasMoreElements() && j < 3) {
+                        String tk = (String)st.nextElement();
+                        msgTokens[j] = tk;
+                        j++;
+                        msgTextIndex += tk.length() + 1;
+                    }
+                    addMessage(message.substring(msgTextIndex));
+                }
+            }
+        });
+    }
+    
+    public String getFriend() {
+        return friendsName;
+    }
+    
+    public void addMessage(String msg) {
+        conversationArea.setText(conversationArea.getText() + friendsName + ": " + msg + "\n");
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -130,28 +170,16 @@ public class ChatDialog extends javax.swing.JDialog implements Runnable{
         /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                ChatDialog dialog = new ChatDialog(new javax.swing.JFrame(), true);
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
+                
             }
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextArea conversationArea;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTextArea jTextArea1;
     private javax.swing.JTextArea msgTextArea;
     private javax.swing.JButton sendBtn;
     // End of variables declaration//GEN-END:variables
-
-    @Override
-    public void run() {
-        
-    }
 }
