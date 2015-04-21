@@ -248,7 +248,7 @@ public class MainGUI extends javax.swing.JDialog implements Observer{
             msgTokens[j] = tk;
             j++;
             msgTextIndex += tk.length() + 1;
-        }System.out.println ("New dialog test");
+        }
         boolean alreadyExists = false;
         for (int i = 0; i < maxChats; i++) {
             if (chats[i] != null && (chats[i].getFriend()).equals(msgTokens[1]) ) {

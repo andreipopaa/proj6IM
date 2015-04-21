@@ -12,7 +12,7 @@ public class ClientConnection extends Observable {
     private PrintWriter pout;
     
     public ClientConnection(String server, int port) {
-        try {
+        try {System.out.println("HERE. server: " + server + " port: " + port);
             sock = new Socket(server, port);
             pout = new PrintWriter(sock.getOutputStream(), true);
             Thread receivingThread = new Thread() {

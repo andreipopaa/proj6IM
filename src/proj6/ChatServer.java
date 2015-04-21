@@ -19,6 +19,7 @@ public class ChatServer
         users.put("dillonhenschen", "password");
         users.put("drg", "drg");
         users.put("test", "test");
+        users.put("alex", "ceau");
     }
     
     public static void main(String[] args)

@@ -1,10 +1,15 @@
 package proj6;
 
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.StringTokenizer;
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import static javax.swing.JComponent.WHEN_FOCUSED;
+import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 
 public class ChatDialog extends javax.swing.JDialog implements Observer{
@@ -22,7 +27,9 @@ public class ChatDialog extends javax.swing.JDialog implements Observer{
         clientConn.addObserver(this);
         username = usr;
         friendsName = friend;
+        this.setTitle(friendsName + " -- Instant Message");
         initComponents();
+        msgTextArea.getInputMap().put(KeyStroke.getKeyStroke("ENTER"),"doNothing");
     }
     
     /**
@@ -73,8 +80,9 @@ public class ChatDialog extends javax.swing.JDialog implements Observer{
                     .addComponent(jScrollPane1)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 333, Short.MAX_VALUE)
-                        .addGap(18, 18, 18)
-                        .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 62, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 62, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(8, 8, 8)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -84,12 +92,11 @@ public class ChatDialog extends javax.swing.JDialog implements Observer{
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 68, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(30, 30, 30))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 68, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap())))
+                        .addGap(15, 15, 15)
+                        .addComponent(sendBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 38, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap())
         );
 
         pack();
@@ -98,7 +105,7 @@ public class ChatDialog extends javax.swing.JDialog implements Observer{
     private void sendBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_sendBtnActionPerformed
         String message = "3 " + username + " " + friendsName + " " + msgTextArea.getText();
         conversationArea.setText(conversationArea.getText() + username + ": " + msgTextArea.getText() + "\n");
-        msgTextArea.setText("");
+        msgTextArea.setText(null);
         clientConn.send(message);
     }//GEN-LAST:event_sendBtnActionPerformed
 
@@ -108,7 +115,7 @@ public class ChatDialog extends javax.swing.JDialog implements Observer{
             sendBtnActionPerformed(null);
         }
     }//GEN-LAST:event_msgTextAreaKeyPressed
-
+    
     public void update(Observable o, Object arg) {
         final Object finalArg = arg;
         SwingUtilities.invokeLater(new Runnable() {

@@ -30,6 +30,18 @@ public class SignInGUI extends javax.swing.JFrame implements Observer {
                 signInBtnActionPerformed(evt);
             }
         });
+        serverTF.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                signInBtnActionPerformed(evt);
+            }
+        });
+        portTF.addActionListener(new java.awt.event.ActionListener() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                signInBtnActionPerformed(evt);
+            }
+        });
     }
 
     /**
@@ -196,7 +208,7 @@ public class SignInGUI extends javax.swing.JFrame implements Observer {
     }// </editor-fold>//GEN-END:initComponents
 
     private void signInBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_signInBtnActionPerformed
-        server = serverTF.getText();
+        server = serverTF.getText(); 
         port = Integer.parseInt(portTF.getText());
         clientConn = new ClientConnection(server, port);
         
